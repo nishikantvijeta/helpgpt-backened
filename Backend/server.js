@@ -24,11 +24,13 @@ app.get("/ping", (req, res) => {
 });
 
 // ✅ Start server and connect DB
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    connectDB();
+// app.listen(PORT, () => {
+//     console.log(`🚀 Server running on http://localhost:${PORT}`);
+//     connectDB();
+// });
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server listening on 0.0.0.0:${PORT}`);
 });
-
 // ✅ MongoDB connection
 const connectDB = async () => {
     try {
