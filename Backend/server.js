@@ -6,7 +6,7 @@ import chatRoutes from "./routes/chat.js";
 import authRoutes from "./routes/auth.js"; // <-- Add this line
 
 const app = express();
-const PORT = 8080;
+const PORT = Number(process.env.PORT) || 10000;
 
 // Middleware
 app.use(express.json());
