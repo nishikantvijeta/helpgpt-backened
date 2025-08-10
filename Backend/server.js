@@ -18,29 +18,29 @@ app.use("/api/auth", authRoutes); // <-- Add this line
 // Protected Chat Routes
 app.use("/api", chatRoutes);
 
-// ✅ Ping test route
+//  Ping test route
 app.get("/ping", (req, res) => {
     res.send("pong");
 });
 
-// ✅ Start server and connect DB
+//  Start server and connect DB
 // app.listen(PORT, () => {
-//     console.log(`🚀 Server running on http://localhost:${PORT}`);
+//     console.log(` Server running on http://localhost:${PORT}`);
 //     connectDB();
 // });
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on 0.0.0.0:${PORT}`);
 });
-// ✅ MongoDB connection
+//  MongoDB connection
 const connectDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         });
-        console.log("✅ Connected to MongoDB");
+        console.log(" Connected to MongoDB");
     } catch (err) {
-        console.error("❌ MongoDB connection failed:", err);
+        console.error(" MongoDB connection failed:", err);
         process.exit(1);
     }
 };
