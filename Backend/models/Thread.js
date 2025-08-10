@@ -27,11 +27,11 @@ const ThreadSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    default: null // ✅ Now optional
+    default: null //  Now optional
   },
   guestId: {
     type: String,
-    default: null // ✅ Used for guest users (UUID or random id)
+    default: null //  Used for guest users (UUID or random id)
   },
   title: {
     type: String,
