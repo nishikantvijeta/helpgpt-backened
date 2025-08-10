@@ -8,7 +8,7 @@ const router = express.Router();
 // Protect all routes
 // router.use(auth);
 
-// ✅ Test route
+//  Test route
 router.post("/test", async (req, res) => {
   try {
     const thread = new Thread({
@@ -25,7 +25,7 @@ router.post("/test", async (req, res) => {
   }
 });
 
-// ✅ Get all threads for the logged-in user
+//  Get all threads for the logged-in user
 router.get("/thread", async (req, res) => {
   try {
     const threads = await Thread.find({ userId: req.userId }).sort({ updatedAt: -1 });
@@ -36,7 +36,7 @@ router.get("/thread", async (req, res) => {
   }
 });
 
-// ✅ Get a single thread (only if it belongs to the user)
+//  Get a single thread (only if it belongs to the user)
 router.get("/thread/:threadId", async (req, res) => {
   const { threadId } = req.params;
 
@@ -54,7 +54,7 @@ router.get("/thread/:threadId", async (req, res) => {
   }
 });
 
-// ✅ Delete a thread (only if it belongs to the user)
+//  Delete a thread (only if it belongs to the user)
 router.delete("/thread/:threadId", async (req, res) => {
   const { threadId } = req.params;
 
@@ -72,7 +72,7 @@ router.delete("/thread/:threadId", async (req, res) => {
   }
 });
 
-// ✅ Main chat route
+//  Main chat route
 router.post("/chat", async (req, res) => {
   const { threadId, message } = req.body;
   console.log("Received:", threadId, message);
