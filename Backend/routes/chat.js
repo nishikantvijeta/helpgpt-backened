@@ -2,13 +2,14 @@ import express from "express";
 import Thread from "../models/Thread.js";
 import getOpenAIAPIResponse from "../utils/openai.js";
 import auth from "../middleware/auth.js";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// ---- [REMOVED] Removed global auth middleware ----
-// router.use(auth);  // <-- THIS LINE REMOVED to allow public access on some routes
+// ---- Removed global auth ----
+// router.use(auth);  <-- removed
 
-// ---- [ADDED] Protected test route ----
+// Protected routes with auth middleware
 router.post("/test", auth, async (req, res) => {
   try {
     const thread = new Thread({
@@ -25,7 +26,6 @@ router.post("/test", auth, async (req, res) => {
   }
 });
 
-// ---- [ADDED] Protected get all threads route ----
 router.get("/thread", auth, async (req, res) => {
   try {
     const threads = await Thread.find({ userId: req.userId }).sort({ updatedAt: -1 });
@@ -36,7 +36,6 @@ router.get("/thread", auth, async (req, res) => {
   }
 });
 
-// ---- [ADDED] Protected get single thread route ----
 router.get("/thread/:threadId", auth, async (req, res) => {
   const { threadId } = req.params;
 
@@ -54,7 +53,6 @@ router.get("/thread/:threadId", auth, async (req, res) => {
   }
 });
 
-// ---- [ADDED] Protected delete thread route ----
 router.delete("/thread/:threadId", auth, async (req, res) => {
   const { threadId } = req.params;
 
@@ -72,7 +70,7 @@ router.delete("/thread/:threadId", auth, async (req, res) => {
   }
 });
 
-// ---- [ADDED] Public chat route — no auth middleware here ----
+// Public /chat route with manual token check for optional user login
 router.post("/chat", async (req, res) => {
   const { threadId, message } = req.body;
   console.log("Received:", threadId, message);
@@ -81,19 +79,32 @@ router.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Message is required" });
   }
 
+  // Manually verify token and extract userId (if token provided)
+  let userId = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.id || decoded.userId;  // adjust according to your JWT payload
+    } catch (err) {
+      // invalid token - ignore, treat as guest
+      userId = null;
+    }
+  }
+
   try {
     let thread = null;
 
-    // ---- [ADDED] Check if user is logged in by seeing if req.userId exists ----
-    if (req.userId) {
-      thread = await Thread.findOne({ threadId, userId: req.userId });
+    if (userId) {
+      thread = await Thread.findOne({ threadId, userId });
 
       if (!thread) {
         thread = new Thread({
           threadId,
           title: message,
           messages: [{ role: "user", content: message }],
-          userId: req.userId
+          userId
         });
       } else {
         thread.messages.push({ role: "user", content: message });
@@ -121,3 +132,4 @@ router.post("/chat", async (req, res) => {
 });
 
 export default router;
+
