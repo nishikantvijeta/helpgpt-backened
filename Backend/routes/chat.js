@@ -6,7 +6,7 @@ import auth from "../middleware/auth.js";
 const router = express.Router();
 
 // Protect all routes
- router.use(auth);
+// router.use(auth);
 
 //  Test route
 router.post("/test", async (req, res) => {
