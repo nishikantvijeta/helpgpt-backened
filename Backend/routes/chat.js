@@ -76,6 +76,7 @@ router.delete("/thread/:threadId", async (req, res) => {
 router.post("/chat", async (req, res) => {
   const { threadId, message } = req.body;
   console.log("Received:", threadId, message);
+  console.log("UserID in /chat:", req.userId);  // <-- Added this line to debug user identity
 
   if (!message) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -127,7 +128,3 @@ router.post("/chat", async (req, res) => {
 });
 
 export default router;
-
-
-
-
