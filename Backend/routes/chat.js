@@ -4,6 +4,7 @@ import getOpenAIAPIResponse from "../utils/openai.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();
+router.use(auth); // This applies auth middleware to all routes, including /chat
 
 // Protect /thread routes only (user history related)
 router.use("/thread", auth);
