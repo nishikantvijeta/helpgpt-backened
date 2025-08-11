@@ -6,7 +6,7 @@ import auth from "../middleware/auth.js";
 const router = express.Router();
 
 // Protect all routes
-// router.use(auth);
+ router.use(auth);
 
 //  Test route
 router.post("/test", async (req, res) => {
@@ -82,7 +82,8 @@ router.post("/chat", async (req, res) => {
   }
 
   try {
-    let thread = await Thread.findOne({ threadId });
+    //let thread = await Thread.findOne({ threadId });
+    let thread = await Thread.findOne({ threadId, userId: req.userId });
     if (!thread) {
       thread = new Thread({
         threadId,
