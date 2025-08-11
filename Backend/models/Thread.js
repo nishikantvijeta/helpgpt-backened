@@ -22,16 +22,15 @@ const ThreadSchema = new mongoose.Schema({
   threadId: {
     type: String,
     required: true,
-  //  unique: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    default: null //  Now optional
+    default: null // Now optional
   },
   guestId: {
     type: String,
-    default: null //  Used for guest users (UUID or random id)
+    default: null // Used for guest users (UUID or random id)
   },
   title: {
     type: String,
@@ -47,6 +46,14 @@ const ThreadSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-//ThreadSchema.index({ threadId: 1, userId: 1 }, { unique: true });
+
+// Unique index for logged-in users
+ThreadSchema.index({ threadId: 1, userId: 1 }, { unique: true });
+
+// Unique index for guests (only when guestId exists)
+ThreadSchema.index(
+  { threadId: 1, guestId: 1 },
+  { unique: true, partialFilterExpression: { guestId: { $exists: true, $ne: null } } }
+);
 
 export default mongoose.model("Thread", ThreadSchema);
