@@ -47,6 +47,6 @@ const ThreadSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-ThreadSchema.index({ threadId: 1, userId: 1 }, { unique: true });
+//ThreadSchema.index({ threadId: 1, userId: 1 }, { unique: true });
 
 export default mongoose.model("Thread", ThreadSchema);
