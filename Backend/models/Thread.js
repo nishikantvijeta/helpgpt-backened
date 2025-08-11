@@ -22,7 +22,7 @@ const ThreadSchema = new mongoose.Schema({
   threadId: {
     type: String,
     required: true,
-    unique: true
+  //  unique: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -47,5 +47,6 @@ const ThreadSchema = new mongoose.Schema({
     default: Date.now
   }
 });
+ThreadSchema.index({ threadId: 1, userId: 1 }, { unique: true });
 
 export default mongoose.model("Thread", ThreadSchema);
