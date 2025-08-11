@@ -1,7 +1,7 @@
 {
-  "name": "sigmagpt-backend",
+  "name": "helpgpt-backend",
   "version": "1.0.0",
-  "description": "Backend server for SigmaGPT using Express and MongoDB",
+  "description": "Backend server for HelpGPT using Express and MongoDB",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -26,6 +26,6 @@
     "node": ">=18.0.0"
   },
   "keywords": [],
-  "author": "vijeta",
+  "author": "nishikant",
   "license": "ISC"
 }
