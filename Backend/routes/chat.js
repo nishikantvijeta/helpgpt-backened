@@ -2,21 +2,21 @@ import express from "express";
 import Thread from "../models/Thread.js";
 import getOpenAIAPIResponse from "../utils/openai.js";
 import auth from "../middleware/auth.js";
-import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// ---- Apply auth middleware ONLY to routes that require login ----
-const protectedRoutes = express.Router();
-protectedRoutes.use(auth);
+// ====== Add auth middleware ONLY to routes that need protection ======
+// This ensures only logged-in users can access these routes.
+router.use("/thread", auth);
+router.use("/chat", auth);
 
-// Protected test route
-protectedRoutes.post("/test", async (req, res) => {
+//  Test route - added auth so req.userId is defined
+router.post("/test", auth, async (req, res) => {
   try {
     const thread = new Thread({
       threadId: "abc",
       title: "Testing New Thread2",
-      userId: req.userId
+      userId: req.userId, // userId comes from auth middleware
     });
 
     const response = await thread.save();
@@ -27,9 +27,10 @@ protectedRoutes.post("/test", async (req, res) => {
   }
 });
 
-// Get all threads for logged-in user
-protectedRoutes.get("/thread", async (req, res) => {
+//  Get all threads for the logged-in user
+router.get("/thread", async (req, res) => {
   try {
+    // Only get threads belonging to logged-in user
     const threads = await Thread.find({ userId: req.userId }).sort({ updatedAt: -1 });
     res.json(threads);
   } catch (err) {
@@ -38,8 +39,8 @@ protectedRoutes.get("/thread", async (req, res) => {
   }
 });
 
-// Get a single thread (only if it belongs to the user)
-protectedRoutes.get("/thread/:threadId", async (req, res) => {
+//  Get a single thread (only if it belongs to the user)
+router.get("/thread/:threadId", async (req, res) => {
   const { threadId } = req.params;
 
   try {
@@ -56,8 +57,8 @@ protectedRoutes.get("/thread/:threadId", async (req, res) => {
   }
 });
 
-// Delete a thread (only if it belongs to the user)
-protectedRoutes.delete("/thread/:threadId", async (req, res) => {
+//  Delete a thread (only if it belongs to the user)
+router.delete("/thread/:threadId", async (req, res) => {
   const { threadId } = req.params;
 
   try {
@@ -74,68 +75,48 @@ protectedRoutes.delete("/thread/:threadId", async (req, res) => {
   }
 });
 
-// Mount all protected routes under router
-router.use(protectedRoutes);
-
-// --- Middleware to optionally decode token and set req.userId if token valid ---
-function optionalAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    try {
-      const token = authHeader.split(" ")[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.userId = decoded.id || decoded.userId; // adjust based on your token payload
-    } catch (err) {
-      // invalid token, ignore and continue as guest
-      req.userId = null;
-    }
-  } else {
-    req.userId = null; // no token provided
-  }
-  next();
-}
-
-// Chat route — accessible to all but saves history only if logged in
-router.post("/chat", optionalAuth, async (req, res) => {
+//  Main chat route
+router.post("/chat", async (req, res) => {
   const { threadId, message } = req.body;
   console.log("Received:", threadId, message);
 
-  if (!message) {
-    return res.status(400).json({ error: "Message is required" });
+  if (!threadId || !message) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  let thread = null;
-
-  if (req.userId) {
-    thread = await Thread.findOne({ threadId, userId: req.userId });
+  try {
+    // Only search thread belonging to user
+    let thread = await Thread.findOne({ threadId, userId: req.userId });
     if (!thread) {
       thread = new Thread({
         threadId,
         title: message,
         messages: [{ role: "user", content: message }],
-        userId: req.userId
+        userId: req.userId,
       });
     } else {
       thread.messages.push({ role: "user", content: message });
     }
-  }
 
-  const assistantReply = await getOpenAIAPIResponse(message);
-  console.log("GPT reply:", assistantReply);
+    const assistantReply = await getOpenAIAPIResponse(message);
+    console.log("GPT reply:", assistantReply);
 
-  if (!assistantReply || typeof assistantReply !== "string") {
-    return res.status(500).json({ error: "Assistant failed to reply" });
-  }
+    if (!assistantReply || typeof assistantReply !== "string") {
+      return res.status(500).json({ error: "Assistant failed to reply" });
+    }
 
-  if (thread) {
     thread.messages.push({ role: "assistant", content: assistantReply });
     thread.updatedAt = new Date();
     await thread.save();
-  }
 
-  res.json({ reply: assistantReply });
+    res.json({ reply: assistantReply });
+  } catch (err) {
+    console.log("Error in /chat:", err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
 });
 
 export default router;
+
 
 
