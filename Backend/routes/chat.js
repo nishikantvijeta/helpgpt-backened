@@ -5,11 +5,11 @@ import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Protect all routes
-// router.use(auth);
+// ---- [REMOVED] Removed global auth middleware ----
+// router.use(auth);  // <-- THIS LINE REMOVED to allow public access on some routes
 
-//  Test route
-router.post("/test", async (req, res) => {
+// ---- [ADDED] Protected test route ----
+router.post("/test", auth, async (req, res) => {
   try {
     const thread = new Thread({
       threadId: "abc",
@@ -25,8 +25,8 @@ router.post("/test", async (req, res) => {
   }
 });
 
-//  Get all threads for the logged-in user
-router.get("/thread", async (req, res) => {
+// ---- [ADDED] Protected get all threads route ----
+router.get("/thread", auth, async (req, res) => {
   try {
     const threads = await Thread.find({ userId: req.userId }).sort({ updatedAt: -1 });
     res.json(threads);
@@ -36,8 +36,8 @@ router.get("/thread", async (req, res) => {
   }
 });
 
-//  Get a single thread (only if it belongs to the user)
-router.get("/thread/:threadId", async (req, res) => {
+// ---- [ADDED] Protected get single thread route ----
+router.get("/thread/:threadId", auth, async (req, res) => {
   const { threadId } = req.params;
 
   try {
@@ -54,8 +54,8 @@ router.get("/thread/:threadId", async (req, res) => {
   }
 });
 
-//  Delete a thread (only if it belongs to the user)
-router.delete("/thread/:threadId", async (req, res) => {
+// ---- [ADDED] Protected delete thread route ----
+router.delete("/thread/:threadId", auth, async (req, res) => {
   const { threadId } = req.params;
 
   try {
@@ -72,27 +72,32 @@ router.delete("/thread/:threadId", async (req, res) => {
   }
 });
 
-//  Main chat route
+// ---- [ADDED] Public chat route — no auth middleware here ----
 router.post("/chat", async (req, res) => {
   const { threadId, message } = req.body;
   console.log("Received:", threadId, message);
 
-  if (!threadId || !message) {
-    return res.status(400).json({ error: "Missing required fields" });
+  if (!message) {
+    return res.status(400).json({ error: "Message is required" });
   }
 
   try {
-    //let thread = await Thread.findOne({ threadId });
-    let thread = await Thread.findOne({ threadId, userId: req.userId });
-    if (!thread) {
-      thread = new Thread({
-        threadId,
-        title: message,
-        messages: [{ role: "user", content: message }],
-        userId: req.userId
-      });
-    } else {
-      thread.messages.push({ role: "user", content: message });
+    let thread = null;
+
+    // ---- [ADDED] Check if user is logged in by seeing if req.userId exists ----
+    if (req.userId) {
+      thread = await Thread.findOne({ threadId, userId: req.userId });
+
+      if (!thread) {
+        thread = new Thread({
+          threadId,
+          title: message,
+          messages: [{ role: "user", content: message }],
+          userId: req.userId
+        });
+      } else {
+        thread.messages.push({ role: "user", content: message });
+      }
     }
 
     const assistantReply = await getOpenAIAPIResponse(message);
@@ -102,9 +107,11 @@ router.post("/chat", async (req, res) => {
       return res.status(500).json({ error: "Assistant failed to reply" });
     }
 
-    thread.messages.push({ role: "assistant", content: assistantReply });
-    thread.updatedAt = new Date();
-    await thread.save();
+    if (thread) {
+      thread.messages.push({ role: "assistant", content: assistantReply });
+      thread.updatedAt = new Date();
+      await thread.save();
+    }
 
     res.json({ reply: assistantReply });
   } catch (err) {
